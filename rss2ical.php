@@ -282,11 +282,11 @@ $patterns = array(
             );
             
 $replace = array(
-            '\\r\\n',
-            '\\r\\n',
+            '\\n',
+            '\\n',
 //br and p    
-            "\\r\\n",
-            "\\r\\n\\r\\n",
+            "\\n",
+            "\\n\\n",
             "",
 //a element            
             //"\\1\\3 [link: \\2]\\4",
@@ -296,11 +296,11 @@ $replace = array(
 //img
             "[img]\\n",
 //cite=,cite    
-            "\\n\\2[cite: \\1]\\r\\n\\r\\n",
+            "\\n\\2[cite: \\1]\\n\\n",
             "[cite]\\1",
 //ul/ol, li
-            "\\r\\n\\1",
-            "* \\1\\r\\n",
+            "\\n\\1",
+            "* \\1\\n",
 
             "\\1",
             "\\1",
@@ -401,6 +401,7 @@ if (strlen($url) == 0) {
         if(!empty($channel_description))
         echo "X-WR-CALDESC;VALUE=TEXT:" . $channel_description . "\r\n";
         //echo "X-WR-RELCALID;VALUE=TEXT:123456789\r\n";
+        $now_timestamp = (new DateTime())->getTimestamp();
         for ( $i = 0; isset ( $rssData[$i] ); $i++ ) {
             $item_title = '';
             $item_summary = '';
@@ -420,11 +421,10 @@ if (strlen($url) == 0) {
             if (!empty($item_description) && (strlen($item_description) > 0) && (strlen($item_title) == 0)) 
                 $item_title = substr($item_description, 0, 30) . "...";
             if(!empty($item_description) || !empty($item_link)){
-                $item_description = "DESCRIPTION:" . ((!empty($item_link) && strlen($item_link) > 0)?$item_link . "\\r\\n":'') . "\\r\\n"
-                    . ((!empty($item_description) && strlen($item_description) > 0)?$item_description:'') . "\r\n";
+                $item_description = "DESCRIPTION:" . ((!empty($item_link) && strlen($item_link) > 0)?$item_link . "\\n":'') . "\\n"
+                    . ((!empty($item_description) && strlen($item_description) > 0)?$item_description:'') . "\n";
         }
             if(!empty($item_description) && strlen($item_description) > 0 && getVar("contentlinewrap","no")=='yes'){
-                //$item_description = wordwrap( $item_description , 72 , "\r\n\t" , false );
                 $item_description = implode("\r\n\t", str_split($item_description, 72));
             }
             if(!empty($rssData[$i]["dc:date"]))
@@ -460,8 +460,8 @@ if (strlen($url) == 0) {
                 } else {
                     $item_date = date("Ymd");
                 }
-                $start_date = ((strlen($item_date)>8)?'-TIME':'') . ":$item_date";
-                $end_date = ((strlen($item_date)>8)?'-TIME':'') . ":$item_date";
+                $start_date = ((strlen($item_date)>8)?'-TIME':'') . "$item_date";
+                $end_date = ((strlen($item_date)>8)?'-TIME':'') . "$item_date";
             } else if ($rssData[$i]["description"]) {
                 $desc = $rssData[$i]["description"];
                 $dateRegex = '/When:\s.*?,\s+([a-zA-Z]+\s+[0-9]+,\s+[0-9]+)\s+([0-9]+:[0-9]+\s+[a-zA-Z]+)\s+to\s+([0-9]+:[0-9]+\s+[a-zA-Z]+)/'; 
@@ -470,21 +470,23 @@ if (strlen($url) == 0) {
                     $date = strtotime($matches[1]);
                     $startTime = $matches[2];
                     $endTime = $matches[3];
-                    $start_date = date('Ymd\THis\ZZ', strtotime($matches[1] . $matches[2]));
-                    $end_date = date('Ymd\THis\ZZ', strtotime($matches[1] . $matches[3]));
+                    $timeZoneOffset = date('Z', strtotime($matches[1] . $matches[2]));
+                    $start_date = date('Ymd\THis\Z', strtotime($matches[1] . $matches[2]) - $timeZoneOffset);
+                    $end_date = date('Ymd\THis\Z', strtotime($matches[1] . $matches[3]) - $timeZoneOffset);
                 }
                 
             }
             echo "BEGIN:VEVENT\r\n";
             echo "UID:" . md5($item_link . $item_title) . "\r\n";
             echo "URL;VALUE=URI:$item_link\r\n";
-//            echo 'DTSTAMP;VALUE=DATE' . ((strlen($item_date)>8)?'-TIME':'') . ":$item_date\r\n";
             echo "SUMMARY:" . $item_summary . "\r\n";
             echo $item_description;
             echo 'DTSTART:' . $start_date . "\r\n";
             echo 'DTEND:' . $end_date . "\r\n";
-// TRANSP:OPAQUE
-// SEQUENCE:0
+            echo 'DTSTAMP:' . $now_timestamp . "\r\n";
+            echo "TRANSP:OPAQUE\r\n";
+            echo "STATUS:CONFIRMED\r\n";
+            echo "SEQUENCE:0\r\n";
             echo "END:VEVENT\r\n";
         }
         echo "END:VCALENDAR\r\n";
