@@ -278,7 +278,8 @@ $patterns = array(
             '/&gt;/',
             '/&amp;/',
             '/&#821[67];/',
-            '/&#822[01];/'
+            '/&#822[01];/',
+            '/Link/'
             );
             
 $replace = array(
@@ -314,7 +315,8 @@ $replace = array(
             ">",
             "&",
             "'",
-            "\""
+            "\"",
+            ""
             );
 
     $data = preg_replace($patterns, $replace, $data);
